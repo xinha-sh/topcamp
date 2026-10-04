@@ -1,0 +1,7 @@
+[workspace]
+members = ["crates/topcamp-domain", "crates/topcamp-db", "crates/topcamp-web", "crates/topcamp-workflows", "crates/topcamp-cable", "crates/topcamp-storage"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "MIT"

@@ -1,0 +1,14 @@
+[package]
+name = "topcamp-db"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+topcamp-domain = { path = "../topcamp-domain" }
+sqlx = { version = "0.9", features = ["postgres", "runtime-tokio", "tls-rustls"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+thiserror = { version = "2" }
+tracing = { version = "0.1" }
+# Bot API tokens (`User.generate_bot_token`): 12 alphanumerics.
+rand = { version = "0.9" }

@@ -1,0 +1,42 @@
+# Local PostgreSQL 17 + RustFS 1.0 for development and tests.
+# Usage: docker compose up -d, then apply migrations/ to $DATABASE_URL.
+# DBOS runs in-process (no sidecar) per the dbos 0.6 Rust crate architecture.
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: topcamp
+      POSTGRES_PASSWORD: topcamp
+      POSTGRES_DB: topcamp
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U topcamp"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rustfs:
+    image: rustfs/rustfs:1.0.0
+    restart: unless-stopped
+    command: ["--address", ":9000", "--console-address", ":9001", "/data"]
+    ports:
+      - "9000:9000"
+    volumes:
+      - rustfsdata:/data
+    environment:
+      RUSTFS_ACCESS_KEY: rustfsadmin
+      RUSTFS_SECRET_KEY: change-me-in-production
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9000/minio/health/ready || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
+  rustfsdata:

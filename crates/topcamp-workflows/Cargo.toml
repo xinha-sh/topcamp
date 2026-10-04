@@ -1,0 +1,28 @@
+[package]
+name = "topcamp-workflows"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+topcamp-cable = { path = "../topcamp-cable" }
+topcamp-db = { path = "../topcamp-db" }
+topcamp-domain = { path = "../topcamp-domain" }
+topcamp-storage = { path = "../topcamp-storage" }
+# Released version only (never main): 0.5.0 per the dependency audit.
+dbos = { version = "0.5" }
+# Minimal decoders only (png/jpeg): thumbnails must not pull a codec farm.
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+# Same feature set rust-s3 already unifies: JSON bodies are serialized
+# by hand (`serde_json::to_vec` + `worker::JSON_CONTENT_TYPE`) so no new
+# reqwest features (and no reqwest-subtree rebuild) are needed.
+reqwest = { version = "0.12" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
+sha2 = { version = "0.10" }
+sqlx = { version = "0.9", features = ["postgres", "runtime-tokio"] }
+thiserror = { version = "2" }
+tracing = { version = "0.1" }
+# `time` is already unified via dbos; `signal` is deliberately NOT
+# requested (the worker is crash-safe by design — see bin/worker.rs).
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }

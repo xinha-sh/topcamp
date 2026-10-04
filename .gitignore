@@ -1,0 +1,16 @@
+# Build outputs (regenerable; includes the Topcoat asset bundle — rebuild
+# with `topcoat asset bundle --bin serve -p topcamp-web`)
+/target/
+
+# Local secrets (see .env.example)
+/.env
+
+# Editor / OS droppings
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local tool caches (regenerable)
+.cachebro/
+.codemogger/

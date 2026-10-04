@@ -1,0 +1,483 @@
+{
+ "artifacts": [
+  "TASKS.md",
+  "tasks.json"
+ ],
+ "phases": [
+  {
+   "id": "phase-1-audit",
+   "ref": [
+    "S2",
+    "S49"
+   ],
+   "status": "done",
+   "tasks": [
+    {
+     "id": "trace-request-lifecycle",
+     "ref": "S2.3",
+     "status": "done",
+     "title": "Trace main request lifecycle"
+    },
+    {
+     "id": "trace-auth-sessions",
+     "ref": "S2.4",
+     "status": "done",
+     "title": "Trace authentication / session handling"
+    },
+    {
+     "id": "trace-message-creation",
+     "ref": "S2.5",
+     "status": "done",
+     "title": "Trace message creation"
+    },
+    {
+     "id": "trace-db-writes-events",
+     "ref": "S2.8",
+     "status": "done",
+     "title": "Trace database writes and events"
+    },
+    {
+     "id": "trace-cable",
+     "ref": "S2.6",
+     "status": "done",
+     "title": "Trace Cable / WebSocket handling"
+    },
+    {
+     "id": "trace-jobs",
+     "ref": "S2.7",
+     "status": "done",
+     "title": "Trace jobs"
+    },
+    {
+     "id": "trace-search",
+     "ref": "S2.9",
+     "status": "done",
+     "title": "Trace search"
+    },
+    {
+     "id": "trace-storage-uploads",
+     "ref": "S2.10",
+     "status": "done",
+     "title": "Trace storage / uploads"
+    },
+    {
+     "id": "trace-richtext",
+     "ref": "S2.11",
+     "status": "done",
+     "title": "Trace rich text"
+    },
+    {
+     "id": "trace-integrations",
+     "ref": "S2.12",
+     "status": "done",
+     "title": "Trace external integrations"
+    },
+    {
+     "id": "identify-tests",
+     "ref": "S2.13",
+     "status": "done",
+     "title": "Identify existing tests and behavioral guarantees"
+    },
+    {
+     "id": "pin-topcoat",
+     "ref": "S2,S52",
+     "status": "done",
+     "title": "Inspect actual Topcoat API and pin version"
+    },
+    {
+     "id": "pin-dbos",
+     "ref": "S17,S52",
+     "status": "done",
+     "title": "Inspect actual DBOS Transact Rust API and pin version"
+    },
+    {
+     "id": "pin-rustfs",
+     "ref": "S2,S52",
+     "status": "done",
+     "title": "Inspect actual RustFS / S3-compatible API and pin version"
+    },
+    {
+     "id": "pin-tokio-ws",
+     "ref": "S2,S52",
+     "status": "done",
+     "title": "Inspect actual Tokio WebSocket ecosystem and pin version"
+    },
+    {
+     "id": "trace-room-controllers",
+     "ref": "S2.5+",
+     "status": "done",
+     "title": "Trace room-type controllers + qr_code (supplemental)"
+    }
+   ],
+   "title": "Repository + dependency audit"
+  },
+  {
+   "id": "phase-2-notes",
+   "ref": [
+    "S2",
+    "S49"
+   ],
+   "status": "done",
+   "tasks": [
+    {
+     "id": "notes-current-arch",
+     "status": "done",
+     "title": "Document current architecture",
+     "ref": "S2"
+    },
+    {
+     "id": "notes-target-arch",
+     "ref": "S3",
+     "status": "done",
+     "title": "Document target architecture"
+    },
+    {
+     "id": "notes-versions",
+     "ref": "S2,S52",
+     "status": "done",
+     "title": "Record pinned dependency versions"
+    },
+    {
+     "id": "notes-crate-map",
+     "ref": "S43",
+     "status": "done",
+     "title": "Write crate migration map"
+    },
+    {
+     "id": "notes-deleted",
+     "ref": "S1,S53",
+     "status": "done",
+     "title": "Record deleted abstractions"
+    },
+    {
+     "id": "notes-compat",
+     "ref": "S36,S54",
+     "status": "done",
+     "title": "Record behavioral compatibility decisions"
+    },
+    {
+     "id": "notes-limitations",
+     "status": "done",
+     "title": "Record known limitations",
+     "ref": "S2,S52"
+    }
+   ],
+   "title": "MIGRATION_NOTES.md"
+  },
+  {
+   "id": "phase-3-topcoat",
+   "ref": [
+    "S4-S10",
+    "S29-S30",
+    "S45",
+    "S49"
+   ],
+   "status": "done",
+   "tasks": [
+    {
+     "id": "topcoat-primary",
+     "ref": "S56",
+     "status": "done",
+     "title": "Topcoat is the primary HTTP framework"
+    },
+    {
+     "id": "axum-removed",
+     "ref": "S6,S56",
+     "status": "done",
+     "title": "Axum removed from application architecture"
+    },
+    {
+     "id": "topcoat-routing",
+     "ref": "S4,S56",
+     "status": "done",
+     "title": "Topcoat routing incl. nested routes and path/query params"
+    },
+    {
+     "id": "topcoat-req-resp",
+     "ref": "S4,S56",
+     "status": "done",
+     "title": "Topcoat request/response primitives"
+    },
+    {
+     "id": "topcoat-layers",
+     "ref": "S29,S56",
+     "status": "done",
+     "title": "Topcoat/Tower layers for cross-cutting concerns"
+    },
+    {
+     "id": "remove-http-redundancy",
+     "ref": "S49,S56",
+     "status": "done",
+     "title": "Remove redundant HTTP abstractions"
+    },
+    {
+     "id": "app-boundary",
+     "ref": "S7,S44",
+     "status": "done",
+     "title": "Clean application boundary; domain free of Topcoat"
+    },
+    {
+     "id": "auth-flow",
+     "ref": "S8",
+     "status": "done",
+     "title": "Auth via Topcoat layer/context to domain authorization",
+     "evidence": "POST /login bcrypt + session start; current_user + hourly resume; logout; 4 unit + 3 web live tests; browser E2E"
+    },
+    {
+     "id": "sessions-cookies",
+     "ref": "S9",
+     "status": "done",
+     "title": "Sessions/cookies via Topcoat primitives, persisted in PostgreSQL"
+    },
+    {
+     "id": "pages-views",
+     "ref": "S10",
+     "status": "done",
+     "title": "Pages/views on Topcoat model; HTML semantics preserved",
+     "evidence": "UI theme + shell + login/landing/404; CSRF double-submit; 24 unit + 5 live tests; browser E2E"
+    }
+   ],
+   "title": "Topcoat-native architecture"
+  },
+  {
+   "id": "phase-4-postgres",
+   "ref": [
+    "S11-S15",
+    "S49"
+   ],
+   "status": "done",
+   "tasks": [
+    {
+     "id": "pg-source-of-truth",
+     "ref": "S11,S56",
+     "status": "done",
+     "title": "PostgreSQL is source of truth; SQLite removed"
+    },
+    {
+     "id": "pg-schema",
+     "ref": "S11,S35",
+     "status": "done",
+     "title": "Native PostgreSQL schema"
+    },
+    {
+     "id": "pg-repos",
+     "ref": "S12",
+     "status": "done",
+     "title": "Focused repositories; no giant DatabaseService"
+    },
+    {
+     "id": "pg-transactions",
+     "ref": "S13,S56",
+     "status": "done",
+     "title": "Correct transactions; atomic message creation"
+    },
+    {
+     "id": "pg-postcommit",
+     "ref": "S14",
+     "status": "done",
+     "title": "Post-commit durable scheduling (outbox)"
+    },
+    {
+     "id": "pg-migrations",
+     "ref": "S35,S56",
+     "status": "done",
+     "title": "Migrations work from a clean database"
+    },
+    {
+     "id": "pg-fts",
+     "ref": "S15,S56",
+     "status": "done",
+     "title": "PostgreSQL FTS replaces SQLite FTS5"
+    },
+    {
+     "id": "pg-search-tests",
+     "ref": "S15,S37",
+     "status": "done",
+     "title": "Search edge cases tested"
+    }
+   ],
+   "title": "PostgreSQL + full-text search"
+  },
+  {
+   "id": "phase-5-dbos",
+   "ref": [
+    "S16-S19",
+    "S27-S28",
+    "S46",
+    "S49"
+   ],
+   "status": "done",
+   "tasks": [
+    {
+     "id": "jobs-removed",
+     "ref": "S28,S56",
+     "status": "done",
+     "title": "Old job system removed"
+    },
+    {
+     "id": "dbos-workflows",
+     "ref": "S16,S56",
+     "status": "done",
+     "title": "Durable jobs are DBOS workflows where durability matters"
+    },
+    {
+     "id": "dbos-safety",
+     "ref": "S18,S56",
+     "status": "done",
+     "title": "Workflows retry-safe, deterministic, idempotent"
+    },
+    {
+     "id": "dbos-real-api",
+     "ref": "S17,S52",
+     "status": "done",
+     "title": "Only real DBOS Rust APIs; never fabricated"
+    },
+    {
+     "id": "sync-request-path",
+     "ref": "S19",
+     "status": "done",
+     "title": "Synchronous request path responds after commit"
+    },
+    {
+     "id": "integrations-dbos",
+     "ref": "S27,S56",
+     "status": "done",
+     "title": "Integrations on DBOS with idempotent side effects"
+    },
+    {
+     "id": "job-reeval",
+     "ref": "S28",
+     "status": "done",
+     "title": "Every old job re-evaluated"
+    }
+   ],
+   "title": "DBOS durable workflows"
+  },
+  {
+   "id": "phase-6-storage-realtime-verify",
+   "ref": [
+    "S20-S26",
+    "S31-S44",
+    "S47-S48",
+    "S49",
+    "S55-S57"
+   ],
+   "status": "done",
+   "tasks": [
+    {
+     "id": "rustfs-blobstore",
+     "ref": "S20,S56",
+     "status": "done",
+     "title": "RustFS blob store behind small BlobStore abstraction",
+     "evidence": "topcamp-storage BlobStore + S3BlobStore; 5/5 contract tests vs live RustFS"
+    },
+    {
+     "id": "blob-metadata-pg",
+     "ref": "S21,S56",
+     "status": "done",
+     "title": "Blob metadata in PostgreSQL",
+     "evidence": "AttachmentRepository: insert/find/list/attach/variant/remove + 4 column tests"
+    },
+    {
+     "id": "blob-bytes-rustfs",
+     "ref": "S21,S56",
+     "status": "done",
+     "title": "Blob bytes in RustFS",
+     "evidence": "topcamp-storage BlobStore + S3BlobStore; 5/5 contract tests vs live RustFS"
+    },
+    {
+     "id": "attachment-pipeline",
+     "ref": "S22,S56",
+     "status": "done",
+     "title": "Durable attachment processing; originals survive failure"
+    },
+    {
+     "id": "cable-protocol",
+     "ref": "S24,S56",
+     "status": "done",
+     "title": "Action Cable protocol preserved over Tokio (/cable)"
+    },
+    {
+     "id": "cable-endpoint",
+     "ref": "S24,S56",
+     "status": "done",
+     "title": "/cable endpoint mount + socket/pubsub fanout over Tokio"
+    },
+    {
+     "id": "cable-new-stack",
+     "ref": "S25",
+     "status": "done",
+     "title": "Cable on new application/database layer"
+    },
+    {
+     "id": "cable-dbos-split",
+     "ref": "S26",
+     "status": "done",
+     "title": "Realtime direct on commit; DBOS only for durable-then-broadcast"
+    },
+    {
+     "id": "error-model",
+     "ref": "S31",
+     "status": "done",
+     "title": "Coherent error model; no SQL leaks"
+    },
+    {
+     "id": "config-docs",
+     "ref": "S33",
+     "status": "done",
+     "title": "Configuration documented; no secrets committed"
+    },
+    {
+     "id": "local-dev",
+     "ref": "S34",
+     "status": "done",
+     "title": "Reproducible local dev environment"
+    },
+    {
+     "id": "observability",
+     "ref": "S39",
+     "status": "done",
+     "title": "Structured logging without secrets"
+    },
+    {
+     "id": "rust-quality",
+     "ref": "S41",
+     "status": "done",
+     "title": "Rust quality gates met"
+    },
+    {
+     "id": "deps-justified",
+     "ref": "S42",
+     "status": "done",
+     "title": "Dependencies justified; no compensating frameworks"
+    },
+    {
+     "id": "cargo-check",
+     "ref": "S50,S56",
+     "status": "done",
+     "title": "cargo check passes"
+    },
+    {
+     "id": "cargo-test",
+     "ref": "S37-S38,S50,S56",
+     "status": "done",
+     "title": "cargo test + integration tests pass"
+    },
+    {
+     "id": "final-review",
+     "ref": "S55",
+     "status": "done",
+     "title": "Final architecture review passes"
+    },
+    {
+     "id": "publish-artifacts",
+     "ref": "S56",
+     "status": "done",
+     "title": "Publishable artifacts prepared"
+    }
+   ],
+   "title": "RustFS + Cable + verify + publish"
+  }
+ ],
+ "source": "Instruction.md"
+}
