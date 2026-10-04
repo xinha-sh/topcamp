@@ -14,6 +14,23 @@ demo data via `cargo run -p topcamp-web --bin seed`.
 
 Migration spec: [Instruction.md](Instruction.md).
 
+## Screenshots
+
+Demo data via `cargo run -p topcamp-web --bin seed`, captured with
+headless Chromium (see [docs/shots/capture.py](docs/shots/capture.py)):
+
+| Sign in | Design room | General room |
+| ------- | ----------- | ------------ |
+| ![Sign in](docs/shots/01-signin.png) | ![Design room](docs/shots/02-rooms.png) | ![General room](docs/shots/03-room.png) |
+
+| Delete confirm (`?confirm=`) | Reply prefill (`?reply_to=`) | Search |
+| ---------------------------- | ---------------------------- | ------ |
+| ![Delete dialog](docs/shots/04-delete-dialog.png) | ![Reply prefill](docs/shots/05-reply.png) | ![Search](docs/shots/06-search.png) |
+
+| Account settings + theme cookie | Chat bots |
+| ------------------------------- | --------- |
+| ![Account settings](docs/shots/07-account.png) | ![Chat bots](docs/shots/08-bots.png) |
+
 ## Artifacts
 
 | File | Purpose |

@@ -1412,6 +1412,14 @@ fn content_view(
 /// `rooms/show/_composer`: the message form. The `lexxy-editor`
 /// nests a textarea fallback so posting works without Lexxy's JS;
 /// only the textarea submits (`lexxy-editor` is not a control).
+/// The textarea autogrows via `field-sizing: content` with `lh` sizing
+/// (`min-height: 3lh`, capped at `12lh` so it can never blanket the
+/// message list). Two prerequisites, both load-bearing: `form#composer`
+/// must NOT carry `contain: inline-size` (size containment collapses it
+/// to zero width, and the content-sized textarea then explodes in height
+/// covering the room), and `#composer-frame` needs `flex-item-grow` to
+/// fill the composer row. Firefox/Safari ignore `field-sizing` and fall
+/// back to `rows=1` with internal scroll — same markup everywhere.
 fn composer_view(
     cx: Cx,
     data: &ShowData,
@@ -1450,8 +1458,8 @@ fn composer_view(
                 <img aria-hidden="true" src=(img_search()) width="20" height="20" />
                 <span class="for-screen-reader">"Search"</span>
             </a>
-            <div id="composer-frame">
-                <form id="composer" class="margin-block flex-item-grow contain" action=(action) accept-charset="UTF-8" method="post" enctype="multipart/form-data" @submit=$(async |e: Event| { e.prevent_default(); if !draft.get().trim().is_empty() { let result = post_message(room, draft.get()).await; if result.is_ok() { draft.set("".to_owned()); keys.set(0i64); err.set("".to_owned()); typing_stop(room).await; } else { err.set(result.unwrap_err()); } } })>
+            <div id="composer-frame" class="flex-item-grow min-width">
+                <form id="composer" class="margin-block flex-item-grow" action=(action) accept-charset="UTF-8" method="post" enctype="multipart/form-data" @submit=$(async |e: Event| { e.prevent_default(); if !draft.get().trim().is_empty() { let result = post_message(room, draft.get()).await; if result.is_ok() { draft.set("".to_owned()); keys.set(0i64); err.set("".to_owned()); typing_stop(room).await; } else { err.set(result.unwrap_err()); } } })>
                     <input type="hidden" name="authenticity_token" value=(csrf_token) />
                     <p class="txt-small" :hidden=$(err.get().is_empty())>$(err.get())</p>
                     <fieldset contents="">
@@ -1462,7 +1470,7 @@ fn composer_view(
                                     <img aria-hidden="true" class="composer__input-hint colorize--black" style="view-transition-name: input-btn;" src=(img_messages_outlined()) width="22" height="22" />
                                     <div class="flex flex-column flex-item-grow min-width gap">
                                         <lexxy-editor rows="1" class="input lexxy-content" style="order: -1" aria-multiline="true" aria-label="Write a message" permitted-attachment-types="application/vnd.topcamp.mention application/vnd.actiontext.opengraph-embed" data-direct-upload-url="/rails/active_storage/direct_uploads" data-blob-url-template="/rails/active_storage/blobs/redirect/:signed_id/:filename" id="message_body" input="message_body_trix_input_message" name="message[body]">
-                                            <textarea name="message[body]" rows="1" aria-label="Write a message" class="input" style="background: transparent; border: 0; width: 100%; resize: none; min-height: 24px; padding: 0; field-sizing: content;" :value=$(draft.get()) @input=$(async |e: Event| { let v = e.target.value; let empty = v.is_empty(); draft.set(v); keys.set(keys.get() + 1i64); if keys.get() % 8i64 == 0i64 { typing_start(room).await; } if empty { typing_stop(room).await; } }) @keydown=$(async |e: Event| { if e.key == "Enter" { if !e.shift_key { if !e.is_composing { e.prevent_default(); if !draft.get().trim().is_empty() { let result = post_message(room, draft.get()).await; if result.is_ok() { draft.set("".to_owned()); keys.set(0i64); err.set("".to_owned()); typing_stop(room).await; } else { err.set(result.unwrap_err()); } } } } } })>(reply_draft)</textarea>
+                                            <textarea name="message[body]" rows="1" aria-label="Write a message" class="input" style="background: transparent; border: 0; width: 100%; resize: none; min-height: 3lh; max-block-size: 12lh; padding: 0; field-sizing: content;" :value=$(draft.get()) @input=$(async |e: Event| { let v = e.target.value; let empty = v.is_empty(); draft.set(v); keys.set(keys.get() + 1i64); if keys.get() % 8i64 == 0i64 { typing_start(room).await; } if empty { typing_stop(room).await; } }) @keydown=$(async |e: Event| { if e.key == "Enter" { if !e.shift_key { if !e.is_composing { e.prevent_default(); if !draft.get().trim().is_empty() { let result = post_message(room, draft.get()).await; if result.is_ok() { draft.set("".to_owned()); keys.set(0i64); err.set("".to_owned()); typing_stop(room).await; } else { err.set(result.unwrap_err()); } } } } } })>(reply_draft)</textarea>
                                             <lexxy-prompt trigger="@" name="mention" src=(mention_src) remote-filtering="true" empty-results="No matches"></lexxy-prompt>
                                         </lexxy-editor>
                                     </div>

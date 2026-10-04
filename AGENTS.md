@@ -86,6 +86,12 @@ cargo test --workspace
 - Don't import Topcoat UI staging components wholesale (they drag
   Tailwind copies) — vendor the structure (e.g. `alert_dialog`) into
   our CSS instead. See `crates/topcamp-web/src/confirm.rs`.
+- Screenshot every visual change (see `docs/shots/capture.py`): two
+  real bugs hid in plain sight — the `?confirm=` dialog rendered below
+  the fold until `.dialog[open]` got explicit fixed centering, and
+  `contain: inline-size` on the composer form collapsed it to zero
+  width. Textarea autogrow is `field-sizing: content` + `lh` units
+  with a `max-block-size` cap, and only on sound layout.
 
 ## Skills
 

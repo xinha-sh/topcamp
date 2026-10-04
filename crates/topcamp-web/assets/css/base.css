@@ -104,7 +104,20 @@ legend {
   margin-inline: var(--inline-space);
   inline-size: var(--width);
   max-inline-size: calc(100dvw - var(--inline-space) * 2);
+  /* Anchors `.dialog__close`, but would also defeat the UA's modal
+     centering — `.dialog[open]` below restores it. */
   position: relative;
+}
+
+/* A server-opened (`?confirm=`) dialog is plain `open`, not modal, so
+   it needs explicit centering: without this it renders in-flow below
+   the fold instead of over the page. */
+.dialog[open] {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  block-size: fit-content;
+}
 
   &::backdrop {
     background-image: linear-gradient(

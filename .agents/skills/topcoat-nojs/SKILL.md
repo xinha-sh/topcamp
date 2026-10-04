@@ -63,6 +63,25 @@ read the raw `Cookie` request header instead.
   Tailwind copies); vendor the structure (e.g. `alert_dialog`) into
   our CSS.
 
+## Layout traps (found via screenshots)
+
+- `.dialog[open]` needs explicit centering (`position: fixed; inset:
+  0; margin: auto`). Our `.dialog` class sets `position: relative`
+  (it anchors `.dialog__close`), which defeats the UA's modal
+  centering — without the override a `?confirm=` dialog renders
+  in-flow below the fold, invisible.
+- Never put `contain: inline-size` on a form wrapping a
+  `display: contents` fieldset: size containment collapses the form to
+  zero width, and a content-sized textarea inside then explodes in
+  height and blankets the page. `#composer-frame` needs
+  `flex-item-grow` to fill the composer row.
+- Cool textareas, no JS (Kevin Powell's two features): `lh` units for
+  sizing (`min-height: 3lh`, no magic numbers) + `field-sizing:
+  content` for autogrow, always with a `max-block-size` cap (e.g.
+  `12lh`) so growth can never cover content. Only after the layout
+  above is sound. Firefox/Safari ignore `field-sizing` and fall back
+  to `rows=1` — same markup everywhere.
+
 ## Out of reach without JS (accepted limits)
 
 PWA install prompt, rich-text toggle, and non-modal dialog focus trap.

@@ -689,7 +689,7 @@ fn edit_view(
                     <input type="hidden" name="authenticity_token" value=(csrf_form) />
                     <div class="full-width input input--actor min-width fill-white">
                         <lexxy-editor rows="1" class="input lexxy-content" aria-multiline="true" aria-label="Edit message" autofocus="autofocus" permitted-attachment-types="application/vnd.topcamp.mention application/vnd.actiontext.opengraph-embed" data-direct-upload-url="/rails/active_storage/direct_uploads" data-blob-url-template="/rails/active_storage/blobs/redirect/:signed_id/:filename" id="message_body" input=(form_id_input) name="message[body]" value=(editable)>
-                            <textarea name="message[body]" rows="1" aria-label="Edit message" class="input" style="background: transparent; border: 0; width: 100%; resize: none; min-height: 24px; padding: 0; field-sizing: content;">(plain)</textarea>
+                            <textarea name="message[body]" rows="1" aria-label="Edit message" class="input" style="background: transparent; border: 0; width: 100%; resize: none; min-height: 3lh; max-block-size: 12lh; padding: 0; field-sizing: content;">(plain)</textarea>
                             <lexxy-prompt trigger="@" name="mention" src=(mention_src) remote-filtering="true" empty-results="No matches"></lexxy-prompt>
                         </lexxy-editor>
                     </div>
