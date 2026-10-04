@@ -89,7 +89,9 @@ Start with [AGENTS.md](AGENTS.md) — project motto, toolchain, gates,
 database hygiene, and the no-JS UI contract. Two project skills carry
 the details agents need: `topcoat-nojs` (zero-JS UI recipes) and
 `topcamp-verify` (the exact verify loop), both under
-[.agents/skills/](.agents/skills/).
+[.agents/skills/](.agents/skills/). The story behind the decisions —
+Turbo removal, the dialog iteration, the screenshot bug hunt — is in
+[docs/SESSION_LOG.md](docs/SESSION_LOG.md).
 
 ## Implementation status
 
