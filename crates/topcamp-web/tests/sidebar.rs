@@ -317,6 +317,52 @@ async fn sidebar_lists_direct_and_shared_rooms() {
 }
 
 #[tokio::test]
+async fn sidebar_room_entries_client_navigate_without_prefetch() {
+    let pool = pool().await;
+    let (uid, email) = seed_user(&pool, "Linky Lou").await;
+    let (bid, _) = seed_user(&pool, "Linky Lou Buddy").await;
+    let shared = seed_shared(&pool, uid, "Linky Shared").await;
+    let direct = seed_direct(&pool, uid, &[uid, bid]).await;
+    let jar = login(&pool, &email).await;
+    let html = get(&pool, "/users/me/sidebar", &jar).await;
+    // Room-to-room hops navigate without a full reload; prefetch stays
+    // off because rendering a room marks it read (tail presence clears
+    // `unread_at`), so speculative renders would unpip unvisited rooms.
+    for needle in [
+        &format!("href=\"/rooms/{shared}\""),
+        &format!("href=\"/rooms/{direct}\""),
+    ] {
+        assert!(html.contains(needle), "missing {needle}");
+    }
+    assert!(
+        html.matches("data-topcoat-link=\"never\"").count() >= 2,
+        "{html}"
+    );
+    cleanup_room(&pool, shared).await;
+    cleanup_room(&pool, direct).await;
+    cleanup_user(&pool, uid).await;
+    cleanup_user(&pool, bid).await;
+}
+
+#[tokio::test]
+async fn document_head_loads_the_runtime_script() {
+    let pool = pool().await;
+    let (uid, email) = seed_user(&pool, "Script Sam").await;
+    let jar = login(&pool, &email).await;
+    let html = get(&pool, "/", &jar).await;
+    // Topcoat 0.10 `runtime::script()` shape: module script in the head
+    // carrying the server's usize width for browser-made lengths.
+    assert!(html.contains("<script type=\"module\""), "{html}");
+    assert!(html.contains("data-topcoat-usize-bits=\""), "{html}");
+    let head = html.find("</head>").expect("head closes");
+    let script = html
+        .find("<script type=\"module\"")
+        .expect("script renders");
+    assert!(script < head, "runtime script lives in the document head");
+    cleanup_user(&pool, uid).await;
+}
+
+#[tokio::test]
 async fn unread_rooms_get_the_unread_class() {
     let pool = pool().await;
     let (uid, email) = seed_user(&pool, "Unread Uma").await;

@@ -245,6 +245,10 @@ pub trait AccountRepository {
     /// Whether the account has an attached `logo` blob (nav +
     /// invitation render the logo only then).
     async fn logo_attached(&self, account_id: i64) -> RepoResult<bool>;
+    /// The singleton's `custom_styles` CSS (`UI-17`), if any.
+    async fn custom_styles(&self) -> RepoResult<Option<String>>;
+    /// `custom_styles#update`: replace the CSS, touching `updated_at`.
+    async fn update_custom_styles(&self, id: i64, css: &str) -> RepoResult<()>;
 }
 
 // --- rooms ---------------------------------------------------------------

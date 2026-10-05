@@ -873,3 +873,204 @@ async fn remove_member_dialog_opens_via_query_param() {
         "cancel links back: {body}"
     );
 }
+
+/// Serializes the custom-styles writers: the singleton row is shared
+/// with parallel tests, and only these tests touch its column.
+fn styles_serial() -> &'static tokio::sync::Mutex<()> {
+    static SERIAL: std::sync::OnceLock<tokio::sync::Mutex<()>> = std::sync::OnceLock::new();
+    SERIAL.get_or_init(Default::default)
+}
+
+async fn get_css(router: &Router, etag: Option<&str>) -> topcoat::router::response::Response {
+    let mut builder = http::Request::builder()
+        .method("GET")
+        .uri("/account/custom_styles.css");
+    if let Some(tag) = etag {
+        builder = builder.header("if-none-match", tag);
+    }
+    let request = builder.body(Body::empty()).expect("request builds");
+    router.handle(request).await
+}
+
+#[tokio::test]
+async fn custom_styles_edit_renders_form_for_admin() {
+    let pool = pool().await;
+    seed_account(&pool).await;
+    let (aid, aemail) = seed_user(&pool, "Ada Styler", true).await;
+    let jar = login(&pool, &aemail).await;
+
+    let (status, body) = get_html(&app(pool.clone()), "/account/custom_styles/edit", &jar).await;
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("Custom styles"), "heading: {body}");
+    assert!(
+        body.contains("name=\"account[custom_styles]\""),
+        "textarea: {body}"
+    );
+    assert!(
+        body.contains("action=\"/account/custom_styles\""),
+        "form: {body}"
+    );
+    assert!(body.contains("authenticity_token"), "csrf: {body}");
+
+    cleanup_user(&pool, aid).await;
+}
+
+#[tokio::test]
+async fn custom_styles_update_round_trip() {
+    let pool = pool().await;
+    seed_account(&pool).await;
+    let (aid, aemail) = seed_user(&pool, "Uma Updater", true).await;
+    let jar = login(&pool, &aemail).await;
+    let router = app(pool.clone());
+    let _guard = styles_serial().lock().await;
+
+    let css = ".x{color:red}";
+    let response = post_form(
+        &router,
+        "PATCH",
+        "/account/custom_styles",
+        &jar,
+        &format!("account%5Bcustom_styles%5D={css}"),
+    )
+    .await;
+    assert_eq!(response.status(), 303);
+    assert_eq!(location(&response), "/account/custom_styles/edit");
+
+    let response = get_css(&router, None).await;
+    assert_eq!(response.status(), 200);
+    assert_eq!(
+        response
+            .headers()
+            .get("content-type")
+            .and_then(|v| v.to_str().ok()),
+        Some("text/css; charset=utf-8")
+    );
+    let etag = response
+        .headers()
+        .get("etag")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default()
+        .to_string();
+    assert!(!etag.is_empty(), "etag set");
+    assert_eq!(body_text(response).await, css);
+
+    // Conditional fetch hits 304.
+    let response = get_css(&router, Some(&etag)).await;
+    assert_eq!(response.status(), 304);
+
+    // The edit form pre-fills the live value.
+    let (status, body) = get_html(&router, "/account/custom_styles/edit", &jar).await;
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(css), "prefill: {body}");
+
+    // Reset the shared row for parallel suites.
+    let response = post_form(
+        &router,
+        "PATCH",
+        "/account/custom_styles",
+        &jar,
+        "account%5Bcustom_styles%5D=",
+    )
+    .await;
+    assert_eq!(response.status(), 303);
+
+    cleanup_user(&pool, aid).await;
+}
+
+#[tokio::test]
+async fn custom_styles_gate_member_and_signed_out() {
+    let pool = pool().await;
+    seed_account(&pool).await;
+    let (aid, _) = seed_user(&pool, "Axl Styler", true).await;
+    let (uid, uemail) = seed_user(&pool, "Mel Member", false).await;
+    let jar = login(&pool, &uemail).await;
+    let router = app(pool.clone());
+
+    let (status, _) = get_html(&router, "/account/custom_styles/edit", &jar).await;
+    assert_eq!(status, 403, "member cannot open the form");
+    let response = post_form(
+        &router,
+        "PATCH",
+        "/account/custom_styles",
+        &jar,
+        "account%5Bcustom_styles%5D=.x{color:red}",
+    )
+    .await;
+    assert_eq!(response.status(), 403, "member cannot save");
+
+    let (status, _) = get_html(&router, "/account/custom_styles/edit", "").await;
+    assert_eq!(status, 303, "signed-out redirects to sign-in");
+
+    // The stylesheet itself stays public (pages link it signed-out too).
+    let response = get_css(&router, None).await;
+    assert_eq!(response.status(), 200);
+
+    cleanup_user(&pool, aid).await;
+    cleanup_user(&pool, uid).await;
+}
+
+#[tokio::test]
+async fn custom_styles_css_stays_inert() {
+    let pool = pool().await;
+    seed_account(&pool).await;
+    let (aid, aemail) = seed_user(&pool, "Ivy Inert", true).await;
+    let jar = login(&pool, &aemail).await;
+    let router = app(pool.clone());
+    let _guard = styles_serial().lock().await;
+
+    // Markup-breaking input must serve verbatim as a stylesheet: no
+    // HTML wrapper to break out of, so nothing to escape.
+    let css = "</style><script>alert(1)</script>";
+    let response = post_form(
+        &router,
+        "PATCH",
+        "/account/custom_styles",
+        &jar,
+        "account%5Bcustom_styles%5D=%3C%2Fstyle%3E%3Cscript%3Ealert(1)%3C%2Fscript%3E",
+    )
+    .await;
+    assert_eq!(response.status(), 303);
+
+    let response = get_css(&router, None).await;
+    assert_eq!(response.status(), 200);
+    assert_eq!(
+        response
+            .headers()
+            .get("content-type")
+            .and_then(|v| v.to_str().ok()),
+        Some("text/css; charset=utf-8")
+    );
+    let served = body_text(response).await;
+    assert_eq!(served, css);
+    assert!(!served.contains("<html"), "no document wrapper");
+
+    // Reset the shared row for parallel suites.
+    let response = post_form(
+        &router,
+        "PATCH",
+        "/account/custom_styles",
+        &jar,
+        "account%5Bcustom_styles%5D=",
+    )
+    .await;
+    assert_eq!(response.status(), 303);
+
+    cleanup_user(&pool, aid).await;
+}
+
+#[tokio::test]
+async fn shell_links_the_install_stylesheet() {
+    let pool = pool().await;
+    seed_account(&pool).await;
+    let (aid, aemail) = seed_user(&pool, "Lena Linker", true).await;
+    let jar = login(&pool, &aemail).await;
+
+    let (status, body) = get_html(&app(pool.clone()), "/account/edit", &jar).await;
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("<link rel=\"stylesheet\" href=\"/account/custom_styles.css\""),
+        "shell links the stylesheet: {body}"
+    );
+
+    cleanup_user(&pool, aid).await;
+}

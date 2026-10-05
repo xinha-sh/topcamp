@@ -1835,6 +1835,26 @@ impl AccountRepository for PgDb {
         Ok(())
     }
 
+    async fn custom_styles(&self) -> RepoResult<Option<String>> {
+        // `Option<Option<..>>`: no row at all vs a NULL column.
+        let css: Option<Option<String>> =
+            sqlx::query_scalar("SELECT custom_styles FROM accounts ORDER BY id LIMIT 1")
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(db)?;
+        Ok(css.flatten())
+    }
+
+    async fn update_custom_styles(&self, id: i64, css: &str) -> RepoResult<()> {
+        sqlx::query("UPDATE accounts SET custom_styles = $2, updated_at = now() WHERE id = $1")
+            .bind(id)
+            .bind(css)
+            .execute(&self.pool)
+            .await
+            .map_err(db)?;
+        Ok(())
+    }
+
     async fn room_creation_restricted(&self) -> RepoResult<bool> {
         let restricted: bool = sqlx::query_scalar(
             "SELECT COALESCE(settings->>'restrict_room_creation_to_administrators' = 'true', false) FROM accounts ORDER BY id LIMIT 1",

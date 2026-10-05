@@ -26,10 +26,10 @@ product UI; keep it that way.
 
 ## Toolchain
 
-- rustc ≥ 1.98 (Topcoat 0.9 MSRV) via rustup **stable first on PATH**.
+- rustc ≥ 1.98 (Topcoat 0.10 MSRV) via rustup **stable first on PATH**.
   Homebrew cargo (1.96) is too old — if `cargo --version` surprises you,
   your PATH is wrong.
-- `topcoat` CLI 0.9 (`cargo install topcoat --version 0.9`) for the asset
+- `topcoat` CLI 0.10 (`cargo install topcoat --version 0.10`) for the asset
   bundle step. Tests self-bundle web assets at runtime; only `serve` needs
   `topcoat asset bundle --bin serve -p topcamp-web`.
 - Services: `docker compose up -d` (PostgreSQL 17 + RustFS).

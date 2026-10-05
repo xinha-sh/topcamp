@@ -118,7 +118,7 @@ Turbo removal, the dialog iteration, the screenshot bug hunt — is in
 
 ## Toolchain
 
-Requires rustc ≥ 1.98 (Topcoat 0.9) via rustup stable, plus the
-`topcoat` CLI (`cargo install topcoat --version 0.9`) for the asset
+Requires rustc ≥ 1.98 (Topcoat 0.10) via rustup stable, plus the
+`topcoat` CLI (`cargo install topcoat --version 0.10`) for the asset
 bundle step. Services come from compose.yml (or any PostgreSQL 17 +
 S3-compatible store matching `.env.example`).

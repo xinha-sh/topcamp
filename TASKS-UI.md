@@ -337,6 +337,18 @@ flashes) → move/extend tests → side-by-side browser screenshots.
   "font" references in served HTML, no font routes (browser
   backend wedged, screenshot skipped — deletion verified
   unreferenced by grep + byte-identical served pages).
+- [x] UI-17 custom styles page (`GET /account/custom_styles/edit`,
+  `PATCH`/`PUT /account/custom_styles`, `POST` + `_method`
+  dispatch, `GET /account/custom_styles.css`). Done: the nav's dead
+  "Custom styles" button now opens an admin-only textarea form
+  (prefilled, CSRF-gated, 64 KiB cap, ✓ flash) persisting to the
+  existing `accounts.custom_styles` column (no migration — present
+  since `0001_init`); the CSS serves install-wide as a plain
+  `text/css` file (public, ETag/304) linked from the document shell,
+  so a stray `</style>` can never break markup. Tests: accounts 22
+  (5 new: form render, update round-trip + 304 + prefill, member/
+  signed-out gates, inert `</style><script>` passthrough, shell
+  link); workspace 462 green; clippy 0, fmt clean.
 
 ## Standing notes
 

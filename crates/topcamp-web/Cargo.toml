@@ -9,11 +9,11 @@ topcamp-cable = { path = "../topcamp-cable" }
 topcamp-db = { path = "../topcamp-db" }
 topcamp-domain = { path = "../topcamp-domain" }
 topcamp-storage = { path = "../topcamp-storage" }
-topcoat = { version = "0.9", features = ["multipart", "runtime", "ui", "websocket"] }
+topcoat = { version = "0.10", features = ["multipart", "runtime", "ui", "websocket"] }
 # Test-only asset self-bundling (`lib.rs::self_bundle_for_tests`): asset
 # ids embed the build OUT_DIR, which varies with feature unification, so
 # test binaries bundle themselves at runtime. Never activated in prod.
-topcoat-asset = { version = "0.9", features = ["bundler"] }
+topcoat-asset = { version = "0.10", features = ["bundler"] }
 # `time` (beat ticker) + `sync` (broadcast/mpsc fan-in) are already in the
 # unified set via dbos/cable — listing them only documents the use.
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }

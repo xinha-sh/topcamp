@@ -42,6 +42,7 @@ use crate::state::{AppState, http_error};
 struct AccountForm {
     account_present: bool,
     name: Option<String>,
+    custom_styles: Option<String>,
     restrict_room_creation: Option<String>,
     role: Option<String>,
     authenticity_token: Option<String>,
@@ -52,6 +53,7 @@ fn parse_account_form(raw: &[u8]) -> AccountForm {
     let mut form = AccountForm {
         account_present: false,
         name: None,
+        custom_styles: None,
         restrict_room_creation: None,
         role: None,
         authenticity_token: None,
@@ -65,6 +67,10 @@ fn parse_account_form(raw: &[u8]) -> AccountForm {
             "account[name]" => {
                 form.account_present = true;
                 form.name = Some(value);
+            }
+            "account[custom_styles]" => {
+                form.account_present = true;
+                form.custom_styles = Some(value);
             }
             "account[settings][restrict_room_creation_to_administrators]" => {
                 form.account_present = true;
@@ -674,6 +680,137 @@ async fn update_account(cx: &Cx, body: Body) -> Result<Response> {
     crate::flash::redirect_with_notice(cx, "/account/edit", "✓")
 }
 
+// --- custom styles (UI-17) -------------------------------------------------------------
+
+/// Install stylesheet cap (64 KiB of CSS is plenty; the form posts
+/// urlencoded like the other settings forms).
+const MAX_CUSTOM_STYLES: usize = 64 * 1024;
+
+/// The `?page=`-less styles form: a textarea prefilled with the live
+/// CSS. Interpolation escapes markup, so even `</textarea>` in the
+/// CSS round-trips through the form safely.
+fn custom_styles_view(cx: &Cx, css: &str, csrf_token: &str) -> topcoat::view::BoxView<'static> {
+    use topcoat::view::view;
+    let css = css.to_string();
+    let csrf_token = csrf_token.to_string();
+    view! {
+        cx =>
+        <section class="txt-align-center">
+            <div class="panel">
+                <h1 class="txt-large">"Custom styles"</h1>
+                <p class="txt-subtle">"Cascading style rules applied to every page of this install."</p>
+                <form class="flex flex-column gap" action="/account/custom_styles" accept-charset="UTF-8" method="post">
+                    <input type="hidden" name="authenticity_token" value=(csrf_token) />
+                    <input type="hidden" name="_method" value="patch" />
+                    <label class="flex flex-column gap txt-align-start">
+                        <span>"Stylesheet"</span>
+                        <textarea class="input txt-small" name="account[custom_styles]" rows="12" maxlength="65536">(css)</textarea>
+                    </label>
+                    <button class="btn btn--reversed center" type="submit">"Save styles"</button>
+                </form>
+            </div>
+        </section>
+    }
+    .boxed()
+}
+
+/// `custom_styles#edit`: admin-only, like the rest of the account
+/// section (the nav button only renders for administrators).
+async fn edit_custom_styles(cx: &Cx) -> Result<Response> {
+    let Some(user) = crate::auth::current_user_or_deny_bot(cx).await? else {
+        return see_other("/session/new").into_response(cx);
+    };
+    ensure_admin(user.role == UserRole::Administrator.value())?;
+    let db = &app_context::<AppState>(cx).db;
+    let Some(_account) = AccountRepository::first(db).await.map_err(http_error)? else {
+        return not_found().into_response(cx);
+    };
+    let css = AccountRepository::custom_styles(db)
+        .await
+        .map_err(http_error)?
+        .unwrap_or_default();
+    let csrf_token = crate::csrf::issue(cx);
+    let content = custom_styles_view(cx, &css, &csrf_token);
+    let shell = page_shell(db, user.id, &user.name).await?;
+    let nav = topcoat::router::Slot::new(nav_view(cx, &back_href(cx), true));
+    let footer = topcoat::router::Slot::new(footer_view(cx));
+    document_shell(
+        cx,
+        "Custom styles".to_string(),
+        body_classes("", true),
+        topcoat::router::Slot::new(content),
+        crate::flash::Flash::default(),
+        shell,
+        None,
+        Some(nav),
+        None,
+        Some(footer),
+    )
+    .boxed()
+    .async_into_response(cx)
+    .await
+}
+
+/// `custom_styles#update`: persist the CSS (empty clears it) and head
+/// back to the form; the ✓ notice rides UI-14's flash.
+async fn update_custom_styles(cx: &Cx, body: Body) -> Result<Response> {
+    let input = parse_account_form(&to_bytes(body, 1024 * 1024).await?);
+    let Some(user) = crate::auth::current_user_or_deny_bot(cx).await? else {
+        return see_other("/session/new").into_response(cx);
+    };
+    if !csrf_ok(cx, &input) {
+        return Err(forbidden().into());
+    }
+    if !input.account_present {
+        return Err(bad_request("param is missing or the value is empty: account").into());
+    }
+    ensure_admin(user.role == UserRole::Administrator.value())?;
+    let css = input.custom_styles.unwrap_or_default();
+    if css.len() > MAX_CUSTOM_STYLES {
+        return Err(bad_request("custom styles are too long").into());
+    }
+    let db = &app_context::<AppState>(cx).db;
+    let Some(account) = AccountRepository::first(db).await.map_err(http_error)? else {
+        return not_found().into_response(cx);
+    };
+    AccountRepository::update_custom_styles(db, account.id, &css)
+        .await
+        .map_err(http_error)?;
+    crate::flash::redirect_with_notice(cx, "/account/custom_styles/edit", "✓")
+}
+
+/// `GET /account/custom_styles.css`: the install stylesheet as a
+/// plain file (public, like the logo). A separate document keeps a
+/// stray `</style>` in the CSS from ever breaking page markup;
+/// ETag/304 keeps repeat page loads cheap.
+async fn show_custom_styles(cx: &Cx) -> Result<Response> {
+    let db = &app_context::<AppState>(cx).db;
+    let css = AccountRepository::custom_styles(db)
+        .await
+        .map_err(http_error)?
+        .unwrap_or_default();
+    let etag = format!("\"{:x}\"", md5::compute(css.as_bytes()));
+    if request::headers(cx)
+        .get("if-none-match")
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|requested| requested == etag)
+    {
+        return Ok(Response::builder()
+            .status(304)
+            .body(Body::empty())
+            .expect("304 builds"));
+    }
+    Ok(Response::builder()
+        .status(200)
+        .header("content-type", "text/css; charset=utf-8")
+        .header(
+            "etag",
+            etag.parse::<http::HeaderValue>().expect("etag parses"),
+        )
+        .body(Body::from(css.into_bytes()))
+        .expect("css builds"))
+}
+
 /// `accounts/users#update`: member ↔ administrator (bots excluded by
 /// `set_role`'s allowlist; anything else falls back to member).
 async fn update_account_user(cx: &Cx, id_param: &str, body: Body) -> Result<Response> {
@@ -845,6 +982,7 @@ async fn parse_multipart_update(content_type: &str, raw: &[u8]) -> Result<Multip
     let mut form = AccountForm {
         account_present: false,
         name: None,
+        custom_styles: None,
         restrict_room_creation: None,
         role: None,
         authenticity_token: None,
@@ -1189,6 +1327,42 @@ pub async fn create_join_code(cx: &Cx, body: Body) -> Result<Response> {
     regenerate_join_code(cx, body).await
 }
 
+/// `GET /account/custom_styles/edit`.
+#[route(GET "/account/custom_styles/edit")]
+pub async fn custom_styles_edit(cx: &Cx) -> Result<Response> {
+    edit_custom_styles(cx).await
+}
+
+/// `PATCH /account/custom_styles`.
+#[route(PATCH "/account/custom_styles")]
+pub async fn custom_styles_update(cx: &Cx, body: Body) -> Result<Response> {
+    update_custom_styles(cx, body).await
+}
+
+/// `PUT /account/custom_styles` (same action).
+#[route(PUT "/account/custom_styles")]
+pub async fn custom_styles_replace(cx: &Cx, body: Body) -> Result<Response> {
+    update_custom_styles(cx, body).await
+}
+
+/// `POST /account/custom_styles`: `_method` patch/put dispatch,
+/// anything else 404s like the other settings forms.
+#[route(POST "/account/custom_styles")]
+pub async fn modify_custom_styles(cx: &Cx, body: Body) -> Result<Response> {
+    let raw = to_bytes(body, 1024 * 1024).await?;
+    let method = parse_account_form(&raw).method_override;
+    match method.as_deref() {
+        Some("patch") | Some("put") => update_custom_styles(cx, Body::from(raw)).await,
+        _ => not_found().into_response(cx),
+    }
+}
+
+/// `GET /account/custom_styles.css`.
+#[route(GET "/account/custom_styles.css")]
+pub async fn custom_styles_css(cx: &Cx) -> Result<Response> {
+    show_custom_styles(cx).await
+}
+
 /// `POST /account/theme`: persist the appearance picker
 /// (`light` / `dark` / `system`) in the `topcamp_theme` cookie and
 /// head back to the settings page. `system` clears the cookie so the
@@ -1280,5 +1454,15 @@ mod tests {
         assert!(!form.account_present);
         assert_eq!(form.role.as_deref(), Some("administrator"));
         assert_eq!(form.method_override.as_deref(), Some("patch"));
+    }
+
+    #[test]
+    fn form_parses_custom_styles() {
+        let form = parse_account_form(
+            b"account%5Bcustom_styles%5D=.x%7Bcolor%3Ared%7D&authenticity_token=t",
+        );
+        assert!(form.account_present);
+        assert_eq!(form.custom_styles.as_deref(), Some(".x{color:red}"));
+        assert_eq!(form.authenticity_token.as_deref(), Some("t"));
     }
 }

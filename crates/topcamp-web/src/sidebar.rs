@@ -22,7 +22,7 @@ use topcoat::{
         response::{AsyncIntoResponse, IntoResponse, Response},
         route,
     },
-    runtime::connected,
+    runtime::{PrefetchMode, connected, link_attrs},
     view::{BoxView, HoistView, ViewExt as _, emit, live, view},
 };
 
@@ -390,11 +390,15 @@ fn placeholder_view(user: &SidebarUser) -> PlaceholderView {
 
 /// One shared-room anchor (`users/sidebars/rooms/_shared`): the
 /// sidebar list item, also prepended/replaced over the rooms streams.
+/// Client-navigated (`link_attrs`) with prefetch off: rendering a room
+/// marks it read (tail presence clears `unread_at`), so a speculative
+/// prefetch would unpip rooms the user never opens.
 pub(crate) fn shared_room_entry_view(cx: &Cx, entry: &SharedEntry) -> BoxView<'static> {
     let item = shared_view(entry);
+    let attrs = link_attrs(cx, item.href.clone(), PrefetchMode::Never);
     view! {
         cx =>
-        <a id=(item.link_id.clone()) data-room-id=(item.room_id.clone()) style="--column-gap: 0.5em" class=(item.class) href=(item.href.clone())>
+        <a id=(item.link_id.clone()) data-room-id=(item.room_id.clone()) style="--column-gap: 0.5em" class=(item.class) (attrs)>
             <span class="overflow-ellipsis">(item.name.clone())</span>
         </a>
     }
@@ -403,11 +407,14 @@ pub(crate) fn shared_room_entry_view(cx: &Cx, entry: &SharedEntry) -> BoxView<'s
 
 /// One direct-room anchor (`users/sidebars/rooms/_direct`): the ping
 /// entry, also prepended over each member's rooms stream.
+/// Client-navigated with prefetch off, like the shared entries: opening
+/// a room marks it read, so prefetching would unpip unvisited rooms.
 pub(crate) fn direct_room_entry_view(cx: &Cx, entry: &DirectEntry) -> BoxView<'static> {
     let item = direct_view(entry);
+    let attrs = link_attrs(cx, item.href.clone(), PrefetchMode::Never);
     view! {
         cx =>
-        <a class=(item.class) id=(item.link_id.clone()) data-room-id=(item.room_id.clone()) href=(item.href.clone())>
+        <a class=(item.class) id=(item.link_id.clone()) data-room-id=(item.room_id.clone()) (attrs)>
             if item.members.len() > 1 {
                 <div class="avatar__group">
                     for member in item.members.iter().take(4) {

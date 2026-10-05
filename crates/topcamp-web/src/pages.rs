@@ -163,9 +163,17 @@ pub(crate) fn document_shell<'a>(
                 <link rel="stylesheet" href=(css_signup()) />
                 <link rel="stylesheet" href=(css_spinner()) />
                 <link rel="stylesheet" href=(css_utilities()) />
+                // Install custom styles (UI-17): served as a file so a
+                // stray `</style>` in admin CSS can never break markup.
+                <link rel="stylesheet" href="/account/custom_styles.css" />
                 if let Some(extra) = head_extra {
                     (extra)
                 }
+                // Browser runtime (topcoat 0.10 `runtime::script()` shape,
+                // inlined: `document_shell` is sync while `script()` is an
+                // async component): `type="module"` + `data-topcoat-usize-bits`
+                // so client navigation + usize lengths match the server.
+                <script type="module" src=(topcoat::runtime::SCRIPT) data-topcoat-usize-bits=(usize::BITS)></script>
                 <title>(title)</title>
             </head>
             <body class=(body_class)>
@@ -217,7 +225,6 @@ pub(crate) fn document_shell<'a>(
                 <a href="https://once.com" id="app-logo" target="_blank" aria-label="Once software from 37signals home page">
                     <img alt="Topcamp logo" width="256" height="216" src=(img_topcamp_icon()) />
                 </a>
-                <script src=(topcoat::runtime::SCRIPT)></script>
             </body>
         </html>
     })
